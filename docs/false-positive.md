@@ -51,8 +51,8 @@ SHA-256: <подставить>
 Размер: <подставить> МБ
 Вердикт: PDM:Trojan.Win32.Generic
 
-Приложение — локальный конвертер файлов с открытым исходным кодом
-(форк DragShift, лицензия MIT). Работает без сети, не ставит служб,
+Приложение — локальный конвертер файлов с открытым исходным кодом.
+Работает без сети, не ставит служб,
 не создаёт автозапуск без явного согласия пользователя.
 Собрано PyInstaller (onedir/onefile), интерфейс PySide6.
 
@@ -74,8 +74,8 @@ SHA-256: <подставить>
 This file is reported as PDM:Trojan.Win32.Generic (behavioural detection).
 
 PrometheaDrop.exe, version 0.1.0, SHA-256 <hash>, built with PyInstaller
-and PySide6. It is an open-source local file converter (MIT-licensed fork
-of DragShift): no network access, no services, no hidden persistence.
+and PySide6. It is an open-source local file converter: no network access,
+no services, no hidden persistence.
 
 Likely triggers: PyInstaller self-extraction to %TEMP% and polling
 GetAsyncKeyState to detect Shift while a file is dragged in Explorer.
@@ -93,3 +93,4 @@ Source: <repository>
 
 Заявку стоит отправлять на **подписанный onedir-билд**, а не на onefile:
 меньше поводов для повторного срабатывания.
+
