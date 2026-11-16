@@ -7,10 +7,11 @@ VSVersionInfo(
       StringStruct('FileDescription', 'PROMETHEA Drop - local file conversions from a radial menu'),
       StringStruct('FileVersion', '0.1.0'),
       StringStruct('InternalName', 'PrometheaDrop'),
-      StringStruct('LegalCopyright', 'MIT: DragShift contributors, PROMETHEA'),
+      StringStruct('LegalCopyright', 'PROMETHEA; see LICENSE for third-party notices'),
       StringStruct('OriginalFilename', 'PrometheaDrop.exe'),
       StringStruct('ProductName', 'PROMETHEA Drop'),
       StringStruct('ProductVersion', '0.1.0')])]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
 )
+
