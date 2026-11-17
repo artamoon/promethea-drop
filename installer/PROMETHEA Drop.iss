@@ -1,4 +1,4 @@
-; PROMETHEA Drop per-user installer. SANDBOX_TEST builds an isolated smoke-test installer.
+﻿; PROMETHEA Drop per-user installer. SANDBOX_TEST builds an isolated smoke-test installer.
 #define AppVersion "0.1.0"
 #ifndef BuildDir
   #define BuildDir "..\dist\PrometheaDrop"
@@ -17,6 +17,7 @@ AppPublisher=PROMETHEA
 DefaultDirName={localappdata}\Programs\PROMETHEA Drop
 DefaultGroupName=PROMETHEA Drop
 DisableProgramGroupPage=yes
+DisableWelcomePage=no
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -32,7 +33,12 @@ SolidCompression=no
 Compression=lzma2
 SolidCompression=yes
 #endif
-WizardStyle=modern
+WizardStyle=modern dark includetitlebar
+WizardBackColor=#1C1C1C
+WizardImageFile=assets\wizard.png
+WizardImageBackColor=#1C1C1C
+WizardSmallImageFile=assets\wizard-small.png
+WizardSmallImageBackColor=#1C1C1C
 CloseApplications=yes
 CloseApplicationsFilter=PrometheaDrop.exe
 RestartApplications=no
@@ -41,12 +47,24 @@ RestartApplications=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
+[CustomMessages]
+english.StartAtLogin=Start PROMETHEA Drop when I sign in
+russian.StartAtLogin=Запускать PROMETHEA Drop при входе в Windows
+english.ContextMenu=Add PROMETHEA Drop to the file context menu
+russian.ContextMenu=Добавить PROMETHEA Drop в контекстное меню файлов
+english.SendTo=Add PROMETHEA Drop to Send To
+russian.SendTo=Добавить PROMETHEA Drop в меню «Отправить»
+english.DesktopIcon=Create a desktop shortcut
+russian.DesktopIcon=Создать ярлык на рабочем столе
+english.LaunchApp=Launch PROMETHEA Drop
+russian.LaunchApp=Запустить PROMETHEA Drop
+
 #ifndef SANDBOX_TEST
 [Tasks]
-Name: "autostart"; Description: "Start PROMETHEA Drop when I sign in"; Flags: unchecked
-Name: "contextmenu"; Description: "Add PROMETHEA Drop to the file context menu"; Flags: unchecked
-Name: "sendto"; Description: "Add PROMETHEA Drop to Send To"; Flags: unchecked
-Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
+Name: "autostart"; Description: "{cm:StartAtLogin}"; Flags: unchecked
+Name: "contextmenu"; Description: "{cm:ContextMenu}"; Flags: unchecked
+Name: "sendto"; Description: "{cm:SendTo}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:DesktopIcon}"; Flags: unchecked
 #endif
 
 [Files]
@@ -69,5 +87,5 @@ Root: HKCU; Subkey: "Software\Classes\*\shell\PrometheaDrop"; ValueType: string;
 Root: HKCU; Subkey: "Software\Classes\*\shell\PrometheaDrop\command"; ValueType: string; ValueName: ""; ValueData: """{app}\PrometheaDrop.exe"" ""%1"""; Tasks: contextmenu
 
 [Run]
-Filename: "{app}\PrometheaDrop.exe"; Description: "Launch PROMETHEA Drop"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\PrometheaDrop.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
 #endif
