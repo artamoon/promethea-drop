@@ -372,6 +372,12 @@ class PrometheaApp(QObject):
     def _settings_changed(self):
         self.watcher.set_key(self.settings.get("trigger"))
         self.tray.setToolTip(f"{APP_NAME} — press {self.trigger_label()} while dragging a file")
+        self.tray_menu.setStyleSheet(ui.qss())
+        from .window import GlassWindow
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, GlassWindow):
+                widget.setStyleSheet(ui.qss())
+            widget.update()
 
     def show_welcome(self):
         self.open_window(WelcomeWindow(self.settings, self.trigger_label()))

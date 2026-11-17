@@ -455,12 +455,12 @@ class RadialMenu(QWidget):
         name = name_fm.elidedText(it.label.upper(), Qt.ElideRight, int(max_w))
         hint = hint_fm.elidedText(it.hint, Qt.ElideRight, int(max_w)) if (it.hint and max_w >= 74) else ""
 
-        p.setPen(ui.INK)
+        p.setPen(blend(ui.INK, QColor("#1C1C1C"), h))
         p.setFont(name_font)
         if hint:
             p.drawText(QRectF(pt.x() - max_w / 2, pt.y() - 13, max_w, 18), Qt.AlignCenter, name)
             p.setFont(hint_font)
-            p.setPen(ui.INK_MUTE)
+            p.setPen(blend(ui.INK_MUTE, QColor(28, 28, 28, 200), h))
             p.drawText(QRectF(pt.x() - max_w / 2, pt.y() + 4, max_w, 16), Qt.AlignCenter, hint)
         else:
             p.drawText(QRectF(pt.x() - max_w / 2, pt.y() - 10, max_w, 20), Qt.AlignCenter, name)

@@ -250,7 +250,7 @@ class ToastCard(QWidget):
                 p.setBrush(ui.LIME)
                 p.drawRoundedRect(chip, 9, 9)
                 p.setFont(f2)
-                p.setPen(ui.INK)
+                p.setPen(QColor("#1C1C1C"))
                 p.drawText(chip, Qt.AlignCenter, self.good)
 
         f = QFont(ui_family(False))

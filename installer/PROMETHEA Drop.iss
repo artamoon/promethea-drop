@@ -25,8 +25,13 @@ OutputBaseFilename=PROMETHEA-Drop-Setup-{#AppVersion}-preview
 SetupIconFile=..\promethea\assets\promethea.ico
 UninstallDisplayIcon={app}\PrometheaDrop.exe
 LicenseFile=..\LICENSE
+#ifdef SANDBOX_TEST
+Compression=none
+SolidCompression=no
+#else
 Compression=lzma2
 SolidCompression=yes
+#endif
 WizardStyle=modern
 CloseApplications=yes
 CloseApplicationsFilter=PrometheaDrop.exe

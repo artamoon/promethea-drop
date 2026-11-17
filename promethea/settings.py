@@ -11,6 +11,7 @@ from . import __version__
 from .brand import APP_NAME, SUBFOLDER
 from .util import CONFIG
 from .window import GlassWindow
+from . import ui
 
 IS_WIN = sys.platform == "win32"
 IS_MAC = sys.platform == "darwin"
@@ -23,6 +24,7 @@ DEFAULTS = {
     "jpg_quality": 90,
     "pdf_dpi": 200,
     "trigger": "shift",
+    "theme": "dark_green",
     "welcomed": False,
 }
 
@@ -48,6 +50,7 @@ class Settings:
         self.apply()
 
     def apply(self):
+        ui.set_theme(self.get("theme"))
         for k in ("output", "jpg_quality", "pdf_dpi"):
             CONFIG[k] = self.get(k)
 
@@ -103,6 +106,7 @@ TRIGGERS = ([("shift", "Shift ⇧"), ("ctrl", "Control ⌃"), ("alt", "Option �
             else [("shift", "Shift"), ("ctrl", "Ctrl"), ("alt", "Alt")])
 OUTPUTS = [("next", "Next to the original"), ("folder", f"In a “{SUBFOLDER}” subfolder")]
 DPIS = [(150, "150 dpi · small"), (200, "200 dpi · balanced"), (300, "300 dpi · print")]
+THEMES = [("light_green", "Light · Green"), ("dark_green", "Dark · Green")]
 
 
 class SettingsWindow(GlassWindow):
@@ -123,6 +127,12 @@ class SettingsWindow(GlassWindow):
             idx = max(0, [v for v, _ in options].index(current) if current in [v for v, _ in options] else 0)
             c.setCurrentIndex(idx)
             return c
+
+        grid.addWidget(QLabel("Theme"), r, 0)
+        self.theme = combo(THEMES, self.s.get("theme"))
+        self.theme.currentIndexChanged.connect(lambda _: self._save("theme", self.theme.currentData()))
+        grid.addWidget(self.theme, r, 1)
+        r += 1
 
         grid.addWidget(QLabel("Menu key"), r, 0)
         self.trigger = combo(TRIGGERS, self.s.get("trigger"))
@@ -189,6 +199,9 @@ class SettingsWindow(GlassWindow):
 
     def _save(self, key, value):
         self.s.set(key, value)
+        if key == "theme":
+            self.setStyleSheet(ui.qss())
+            self.update()
         self.changed.emit()
 
 
@@ -208,7 +221,8 @@ class WelcomeWindow(GlassWindow):
             badge = QLabel(n)
             badge.setAlignment(Qt.AlignCenter)
             badge.setFixedSize(34, 34)
-            badge.setStyleSheet("color: #5F6B10; font-weight: 500; font-size: 12pt;")
+            badge.setObjectName("good")
+            badge.setStyleSheet("font-weight: 500; font-size: 12pt;")
             row.addWidget(badge)
             col = QVBoxLayout()
             col.setSpacing(0)

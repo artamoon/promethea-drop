@@ -16,20 +16,33 @@ from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QWidget
 
 # ---------------------------------------------------------------- палитра
-PAPER = QColor("#EEECE6")        # фон окна и страницы
-SURFACE = QColor("#FFFFFF")      # карточка, меню, поле ввода
-SURFACE_ALT = QColor("#F6F4ED")  # наведённое состояние, заголовок таблицы
-INK = QColor("#34373A")          # основной текст
-INK_SOFT = QColor(52, 55, 58, 176)
-INK_MUTE = QColor(52, 55, 58, 128)
-LINE = QColor(52, 55, 58, 34)    # тонкая линия: 13 % графита
-LINE_STRONG = QColor(52, 55, 58, 64)
+PAPER = QColor("#1C1C1C")
+SURFACE = QColor("#1C1C1C")
+SURFACE_ALT = QColor("#2C2C2C")
+INK = QColor("#EEECE6")
+INK_SOFT = QColor(238, 236, 230, 190)
+INK_MUTE = QColor(238, 236, 230, 160)
+LINE = QColor(238, 236, 230, 44)
+LINE_STRONG = QColor(238, 236, 230, 85)
 LIME = QColor("#E4F222")         # единственный акцент
 LIME_HOVER = QColor("#EAF64A")
-LIME_INK = QColor("#5F6B10")     # лайм как текст на светлом — затемнённый
-OK = QColor("#3F6B3C")
-ERR = QColor("#A8402F")
-WARN = QColor("#8A5A12")
+LIME_INK = QColor("#E4F222")
+OK = QColor("#E4F222")
+ERR = QColor("#F18F80")
+WARN = QColor("#E8BD73")
+
+THEMES = {
+    "dark_green": {"PAPER": "#1C1C1C", "SURFACE": "#1C1C1C", "SURFACE_ALT": "#2C2C2C", "INK": "#EEECE6", "INK_SOFT": (238, 236, 230, 190), "INK_MUTE": (238, 236, 230, 160), "LINE": (238, 236, 230, 44), "LINE_STRONG": (238, 236, 230, 85), "LIME_INK": "#E4F222", "OK": "#E4F222", "ERR": "#F18F80", "WARN": "#E8BD73"},
+    "light_green": {"PAPER": "#EEECE6", "SURFACE": "#FFFFFF", "SURFACE_ALT": "#F6F4ED", "INK": "#34373A", "INK_SOFT": (52, 55, 58, 176), "INK_MUTE": (52, 55, 58, 128), "LINE": (52, 55, 58, 34), "LINE_STRONG": (52, 55, 58, 64), "LIME_INK": "#5F6B10", "OK": "#3F6B3C", "ERR": "#A8402F", "WARN": "#8A5A12"},
+}
+current_theme = "dark_green"
+
+
+def set_theme(name: str) -> None:
+    global current_theme
+    current_theme = name if name in THEMES else "dark_green"
+    for key, value in THEMES[current_theme].items():
+        globals()[key] = QColor(*value) if isinstance(value, tuple) else QColor(value)
 
 SPACE = 4  # всё кратно 4
 
@@ -59,19 +72,20 @@ def paint_shadow(p: QPainter, rect: QRectF, radius: float, spread: int = 16,
     p.restore()
 
 
-def paint_surface(p: QPainter, path: QPainterPath, fill: QColor = SURFACE,
-                  border: QColor | None = LINE, width: float = 1.0) -> None:
+def paint_surface(p: QPainter, path: QPainterPath, fill: QColor | None = None,
+                  border: QColor | None = None, width: float = 1.0) -> None:
+    fill = SURFACE if fill is None else fill
     p.setPen(QPen(border, width) if border is not None else Qt.NoPen)
     p.setBrush(fill)
     p.drawPath(path)
 
 
-def paint_card(p: QPainter, rect: QRectF, radius: float = 14, fill: QColor = SURFACE,
-               border: QColor | None = LINE, shadow: bool = True) -> QPainterPath:
+def paint_card(p: QPainter, rect: QRectF, radius: float = 14, fill: QColor | None = None,
+               border: QColor | None = None, shadow: bool = True) -> QPainterPath:
     if shadow:
         paint_shadow(p, rect, radius)
     path = rounded_path(rect, radius)
-    paint_surface(p, path, fill, border)
+    paint_surface(p, path, fill, LINE if border is None else border)
     return path
 
 
@@ -190,9 +204,26 @@ QMenu::separator { height: 1px; background: rgba(52,55,58,0.10); margin: 6px 8px
 
 def qss() -> str:
     from .util import ui_family
-    return (_QSS.replace("@FONT@", ui_family(False)).replace("@SERIF@", ui_family(True))
+    if current_theme == "light_green":
+        return (_QSS.replace("@FONT@", ui_family(False)).replace("@SERIF@", ui_family(True))
+                .replace("@CHECK@", (Path(__file__).resolve().parent / "assets" / "check.png").as_posix())
+                .replace("@CHEVRON@", (Path(__file__).resolve().parent / "assets" / "chevron.png").as_posix()))
+    styles = _QSS.replace("#34373A", "@INK@").replace("#FFFFFF", "@SURFACE@")
+    styles = (styles.replace("rgba(52,55,58,", "rgba(238,236,230,")
+              .replace("#F6F4ED", "#2C2C2C").replace("#EDE9DF", "#3A3A3A")
+              .replace("#E2DED3", "#454545").replace("#5F6B10", "#E4F222")
+              .replace("#3F6B3C", "#E4F222").replace("#8A5A12", "#E8BD73")
+              .replace("@INK@", "#EEECE6").replace("@SURFACE@", "#292929"))
+    styles += '''
+QPushButton#primary { color: #1C1C1C; }
+QPushButton:checked { background: #E4F222; border-color: #E4F222; color: #1C1C1C; }
+QPushButton:checked:hover { background: #EAF64A; color: #1C1C1C; }
+QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox { selection-color: #1C1C1C; }
+QToolTip { background: #EEECE6; color: #1C1C1C; }
+'''
+    return (styles.replace("@FONT@", ui_family(False)).replace("@SERIF@", ui_family(True))
             .replace("@CHECK@", (Path(__file__).resolve().parent / "assets" / "check.png").as_posix())
-            .replace("@CHEVRON@", (Path(__file__).resolve().parent / "assets" / "chevron.png").as_posix()))
+            .replace("@CHEVRON@", (Path(__file__).resolve().parent / "assets" / "chevron-dark.png").as_posix()))
 
 
 def __getattr__(name):  # ui.QSS
