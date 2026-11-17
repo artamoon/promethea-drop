@@ -44,7 +44,20 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m promethea
 ```
 
-Для обработки аудио и видео необходим FFmpeg. Для готовой Windows-сборки устанавливать Python отдельно не требуется.
+### macOS: запуск из исходников
+
+Поддержка macOS находится в разработке, готовая сборка пока не опубликована. Для запуска нужен Python 3.10 или новее:
+
+```bash
+cd promethea-drop
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m promethea
+```
+
+Приложение появляется в строке меню. Для обработки аудио и видео установите FFmpeg отдельно и убедитесь, что команда `ffmpeg` доступна в терминале.
+
+Для обработки аудио и видео на Windows также необходим FFmpeg. Для готовой Windows-сборки устанавливать Python отдельно не требуется.
 
 ## Интерфейс
 

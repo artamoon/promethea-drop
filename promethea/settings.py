@@ -176,14 +176,6 @@ class SettingsWindow(GlassWindow):
             self.auto.toggled.connect(set_autostart)
             grid.addWidget(self.auto, r, 1)
             r += 1
-        if IS_MAC:
-            from . import platform_mac
-            if not platform_mac.has_screen_recording():
-                glass_btn = QPushButton("Enable full liquid glass…")
-                glass_btn.setToolTip("Lets the glass refract the windows behind it (Screen Recording permission)")
-                glass_btn.clicked.connect(platform_mac.request_screen_recording)
-                grid.addWidget(glass_btn, r, 1)
-                r += 1
         self.body.addLayout(grid)
         self.body.addStretch(1)
         about = QLabel(f"{APP_NAME} {__version__}  ·  originals are never modified")
@@ -236,17 +228,6 @@ class WelcomeWindow(GlassWindow):
             row.addLayout(col, 1)
             self.body.addLayout(row)
         self.body.addStretch(1)
-        if IS_MAC:
-            from . import platform_mac
-            if not platform_mac.has_screen_recording():
-                note = QLabel("Optional: allow Screen Recording so the glass can refract the windows "
-                              f"behind it (otherwise it shows your wallpaper). {APP_NAME} never saves or sends it.")
-                note.setObjectName("dim")
-                note.setWordWrap(True)
-                self.body.addWidget(note)
-                b = QPushButton("Allow Screen Recording…")
-                b.clicked.connect(platform_mac.request_screen_recording)
-                self.body.addWidget(b, 0, Qt.AlignLeft)
         if IS_LINUX:
             from . import platform_linux
             if platform_linux.is_wayland():

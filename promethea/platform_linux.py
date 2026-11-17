@@ -109,7 +109,7 @@ def escape_down() -> bool:
 # ---------------------------------------------------------------- compositing
 def composited() -> bool:
     """True if a compositing manager runs (translucent windows work)."""
-    if os.environ.get("DRAGSHIFT_FORCE_NO_COMPOSITOR"):
+    if os.environ.get("PROMETHEA_FORCE_NO_COMPOSITOR"):
         return False
     if is_wayland():
         return True

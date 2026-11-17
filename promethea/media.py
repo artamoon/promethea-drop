@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 from .convert import atomic_save
@@ -22,7 +23,25 @@ def ffmpeg_path() -> str:
     fallback = shutil.which("ffmpeg")
     if fallback:
         return fallback
+    # Finder and launchd apps often have a minimal PATH without Homebrew.
+    if sys.platform == "darwin":
+        for path in (Path("/opt/homebrew/bin/ffmpeg"), Path("/usr/local/bin/ffmpeg")):
+            if path.is_file() and os.access(path, os.X_OK):
+                return str(path)
+        raise UserError("FFmpeg is missing. Install it with Homebrew to use audio and video conversion.")
     raise UserError("FFmpeg is missing. Reinstall PROMETHEA Drop to use audio and video conversion.")
+
+
+@lru_cache(maxsize=4)
+def _encoders(executable: str) -> frozenset[str]:
+    try:
+        result = subprocess.run([executable, "-hide_banner", "-encoders"],
+                                capture_output=True, text=True, check=True,
+                                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    return frozenset(parts[1] for line in result.stdout.splitlines()
+                     if len(parts := line.split()) >= 2 and len(parts[0]) == 6)
 
 
 def targets(cat: str, ext: str) -> list[str]:
@@ -37,6 +56,7 @@ def convert(src: str | Path, cat: str, target: str) -> list[Path]:
         raise UserError("This media conversion is not supported")
     out = sibling(src, ext="." + target.lower())
     command = [ffmpeg_path(), "-hide_banner", "-nostdin", "-loglevel", "error", "-i", str(src)]
+    available = _encoders(command[0])
     if target in AUDIO_TARGETS:
         command += ["-map", "0:a:0", "-vn", "-map_metadata", "0"]
         codecs = {"MP3": ["-c:a", "libmp3lame", "-q:a", "3", "-f", "mp3"],
@@ -45,11 +65,15 @@ def convert(src: str | Path, cat: str, target: str) -> list[Path]:
                   "OPUS": ["-c:a", "libopus", "-b:a", "128k", "-f", "opus"],
                   "M4A": ["-c:a", "aac", "-b:a", "192k", "-f", "ipod"],
                   "FLAC": ["-c:a", "flac", "-f", "flac"]}
+        if target == "OGG" and "libvorbis" not in available and "vorbis" in available:
+            codecs["OGG"] = ["-c:a", "vorbis", "-strict", "experimental", "-ac", "2", "-q:a", "5", "-f", "ogg"]
         command += codecs[target]
     elif target == "GIF":
         command += ["-map", "0:v:0", "-an", "-vf", "fps=15,scale='min(720,iw)':-2:flags=lanczos", "-f", "gif"]
     else:
-        command += ["-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libopenh264", "-b:v", "4M",
+        video_encoder = next((name for name in ("libopenh264", "libx264", "h264_videotoolbox")
+                              if name in available), "libopenh264")
+        command += ["-map", "0:v:0", "-map", "0:a:0?", "-c:v", video_encoder, "-b:v", "4M",
                     "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-f", "mp4"]
 
     def write(tmp):

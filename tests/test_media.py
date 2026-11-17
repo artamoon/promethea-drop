@@ -53,3 +53,11 @@ def test_requested_audio_directions(audio):
         output = media.convert(originals[source], 'audio', target)[0]
         result = subprocess.run([media.ffmpeg_path(), '-v', 'error', '-i', str(output), '-f', 'null', '-'], capture_output=True)
         assert result.returncode == 0, result.stderr.decode(errors='replace')
+
+
+def test_macos_finds_homebrew_ffmpeg_without_path(monkeypatch):
+    monkeypatch.setattr(media.sys, 'platform', 'darwin')
+    monkeypatch.setattr(media.shutil, 'which', lambda name: None)
+    monkeypatch.setattr(media.Path, 'is_file', lambda path: str(path) == '/opt/homebrew/bin/ffmpeg')
+    monkeypatch.setattr(media.os, 'access', lambda path, mode: True)
+    assert media.ffmpeg_path() == '/opt/homebrew/bin/ffmpeg'

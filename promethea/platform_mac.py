@@ -2,10 +2,6 @@
 
 * Trigger: NSEvent.pressedMouseButtons / modifierFlags give the *global* mouse and
   modifier state, with no Accessibility or Input Monitoring permission needed.
-* Capture: CGWindowListCreateImage can capture "everything below window N", which keeps
-  Finder's drag picture and our own windows out of the glass (live refresh like Windows'
-  capture exclusion). Seeing other apps' windows needs the Screen Recording permission;
-  without it macOS returns just the wallpaper, which still makes a pleasant glass.
 * Start at login: a LaunchAgent plist.
 """
 from __future__ import annotations
@@ -72,82 +68,6 @@ def window_number(widget) -> int:
         return 0
 
 
-# ---------------------------------------------------------------- screen capture
-LAST_SWEEP: list[str] = []
-
-
-def drag_window_ids(cursor: tuple[int, int] | None = None) -> list[int]:
-    """The drag picture under the cursor: windows at the dragging level, or any small
-    window of another app sitting right on the cursor above normal windows."""
-    LAST_SWEEP.clear()
-    if not OK:
-        return []
-    try:
-        level = Quartz.CGWindowLevelForKey(Quartz.kCGDraggingWindowLevelKey)
-        infos = Quartz.CGWindowListCopyWindowInfo(Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID) or []
-        me = os.getpid()
-        ids = []
-        for i in infos:
-            layer = int(i.get("kCGWindowLayer", 0))
-            b = i.get("kCGWindowBounds", {}) or {}
-            x, y, w, h = (float(b.get(k, 0)) for k in ("X", "Y", "Width", "Height"))
-            near = cursor is not None and x - 40 <= cursor[0] <= x + w + 40 and y - 40 <= cursor[1] <= y + h + 40
-            if near:
-                LAST_SWEEP.append(f"{i.get('kCGWindowOwnerName')} layer={layer} {int(w)}x{int(h)}")
-            if int(i.get("kCGWindowOwnerPID", 0)) == me:
-                continue
-            if layer >= level or (near and layer > 0 and w < 700 and h < 700):
-                ids.append(int(i["kCGWindowNumber"]))
-        return ids
-    except Exception as e:
-        LAST_SWEEP.append(f"error {e}")
-        return []
-
-
-def capture(x: int, y: int, w: int, h: int, below_window: int = 0):
-    """Capture a screen rect (global points, top-left origin) as a PIL RGB image.
-    below_window: capture only what is beneath that window (excludes it and anything above)."""
-    if not OK:
-        return None
-    from PIL import Image
-    rect = Quartz.CGRectMake(x, y, w, h)
-    if below_window:
-        opt, wid = Quartz.kCGWindowListOptionOnScreenBelowWindow, below_window
-    else:
-        loc = Quartz.CGEventGetLocation(Quartz.CGEventCreate(None))
-        drags = drag_window_ids((int(loc.x), int(loc.y)))
-        if drags:
-            # everything below the lowest drag window = no drag picture in the glass
-            opt, wid = Quartz.kCGWindowListOptionOnScreenBelowWindow, min(drags)
-        else:
-            opt, wid = Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID
-    try:
-        img = Quartz.CGWindowListCreateImage(rect, opt, wid, Quartz.kCGWindowImageBestResolution)
-    except Exception:
-        return None
-    if img is None:
-        return None
-    width, height = Quartz.CGImageGetWidth(img), Quartz.CGImageGetHeight(img)
-    bpr = Quartz.CGImageGetBytesPerRow(img)
-    data = Quartz.CGDataProviderCopyData(Quartz.CGImageGetDataProvider(img))
-    im = Image.frombuffer("RGBA", (width, height), bytes(data), "raw", "BGRA", bpr, 1)
-    return im.convert("RGB").resize((w, h), Image.LANCZOS)
-
-
-def has_screen_recording() -> bool:
-    try:
-        return bool(Quartz.CGPreflightScreenCaptureAccess())
-    except Exception:
-        return True
-
-
-def request_screen_recording() -> bool:
-    try:
-        return bool(Quartz.CGRequestScreenCaptureAccess())
-    except Exception:
-        return False
-
-
 # ---------------------------------------------------------------- start at login
 AGENT = Path.home() / "Library" / "LaunchAgents" / "com.promethea.app.plist"
 
@@ -165,9 +85,14 @@ def autostart_enabled() -> bool:
 def set_autostart(on: bool):
     if on:
         AGENT.parent.mkdir(parents=True, exist_ok=True)
+        config = {"Label": "com.promethea.app", "ProgramArguments": _program(),
+                  "RunAtLoad": True, "ProcessType": "Interactive"}
+        if not getattr(sys, "frozen", False):
+            # launchd does not start in the repository directory, so Python would
+            # otherwise be unable to find the promethea package.
+            config["WorkingDirectory"] = str(Path(__file__).resolve().parent.parent)
         with open(AGENT, "wb") as f:
-            plistlib.dump({"Label": "com.promethea.app", "ProgramArguments": _program(),
-                           "RunAtLoad": True, "ProcessType": "Interactive"}, f)
+            plistlib.dump(config, f)
     elif AGENT.exists():
         AGENT.unlink()
 
